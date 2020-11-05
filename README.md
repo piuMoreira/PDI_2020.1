@@ -13,3 +13,10 @@ Opcionalmente, pode-se utilizar o gerenciador de pacotes *pip* para instalar aut
 ou ainda,
 
 `python3 -m pip install -r requirements.txt`
+
+## Uso
+
+`python3 examples.py IMAGEM operacao1 [operacao2] [operacao3...]`
+
+Exemplo:
+`python3 examples.py images/baboon.png avg_grayscale flip_v`
