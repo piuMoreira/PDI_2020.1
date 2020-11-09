@@ -1,4 +1,4 @@
-from loader import *
+import numpy as np
 
 def extend_with_zeros(img : np.array, horiz : int, vert : int, horizr=None, vertb=None):
     ''' Extende uma imagem com zeros nas bordas de acordo com os valores de horiz e vert.
@@ -32,6 +32,34 @@ def extend_with_zeros_mask(img : np.array, horiz : int, vert : int, noncenter=Tr
     rrr['xi'], rrr['yi'] = cc(horiz), cc(vert)
     return extend_with_zeros(img, cc(horiz), cc(vert), horiz//2, vert//2)
 
+
+def round_image_colors(img : np.array, doAssert=True):
+    ''' Arredonda valores quebrados e converte o tipo de array para imagem.
+    Valores de cor excedentes NÃO são tratados.
+    '''
+    if doAssert:
+        assert img.min() >= -0.0 or img.min() >= 0.0
+        assert img.max() <= 255.001
+    return img.round().astype(np.uint8)
+
+def fix_scale_image_colors(img : np.array, auto_round=True, forceUpperbound=False, forceLowerbond=False):
+    ''' Escala todas as cores em caso de valores excedentes na imagem.
+    '''
+    if img.min() < -0.0 or img.min() < 0.0 or forceLowerbond:
+        img = img+img.min()
+    if img.max() > 255 or forceUpperbound:
+        img = img/img.max()
+    return round_image_colors(img) if auto_round else img
+
+def fix_truncate_image_colors(img : np.array, auto_round=True):
+    ''' Trunca valores excedentes de cor da imagem.
+    '''
+    img = img.copy()
+    img[img > 255] = 255
+    img[img < 0] = 0
+    return round_image_colors(img) if auto_round else img
+
+
 def apply_mask_func(func, img : np.array, maskh : int, maskv : int, ext_zero=True, pass_coordinates=False):
     ''' Aplica uma máscara de tamanho maskh x maskv sobre img usando uma função fornecida func.
     Se ext_zero = True, então a extensão por zeros é usada.
@@ -63,22 +91,26 @@ def apply_mask_func(func, img : np.array, maskh : int, maskv : int, ext_zero=Tru
     #     return func(x, *args)
     
     w, h = img.shape[0], img.shape[1] # salvamos a largura e altura
-    imgz = img if not ext_zero else extend_with_zeros_mask(img, maskh, maskv) # extensão por zeros
+    imgz = img if not ext_zero else extend_with_zeros_mask(img, maskv, maskh) # extensão por zeros
     cc = lambda x: x//2 - 1 if x % 2 == 0 else x//2 # SEM extensão por zero, corte das janelas
     nhl, nvu, nhr, nvd = cc(maskh), cc(maskv), maskh//2 + 1, maskv//2 + 1 # pré-calculando cortes
     
-    def sel_extz(i, j, *args): # Para extensão por zero
+    def sel_wextz(i, j): # Para extensão por zero
+        args = [i, j] if pass_coordinates else []
+        assert i+maskh <= imgz.shape[0]
+        assert j+maskv <= imgz.shape[1]
         return func(imgz[i:i+maskh, j:j+maskv], *args) # Aplica func em i,j + MASK
-    def sel_nextz(i, j, *args): # Para SEM extensão por zero
+    
+    def sel_nextz(i, j): # Para SEM extensão por zero
+        args = [i, j] if pass_coordinates else []
         return func(imgz[max(0, i-nhl):min(w, i+nhr), max(0, j-nvu):min(h, j+nvd)], *args) # Aplica func com limites
-    sel_f = sel_extz if ext_zero else sel_nextz # Escolhe se extensão por zero
 
-    if pass_coordinates: # Se fornece i,j para a função
-        return np.array([[sel_f(i, j, i, j) for j in range(h)] for i in range(w)])
+    if ext_zero: # Se tem extensão por zero...
+        return np.array([[sel_wextz(i, j) for j in range(h)] for i in range(w)])
     else: # Senão...
-        return np.array([[sel_f(i, j) for j in range(h)] for i in range(w)])
+        return np.array([[sel_nextz(i, j) for j in range(h)] for i in range(w)])
 
-def apply_mask_func_each_channel(func, img : np.array, maskh : int, maskv : int, ext_zero=True):
+def apply_mask_func_each_channel(func, img : np.array, maskh : int, maskv : int, ext_zero=True, pass_coordinates=False):
     ''' Aplica uma máscara de tamanho maskh x maskv sobre img usando uma função fornecida func.
     Se ext_zero = True, então a extensão por zeros é usada.
 
@@ -101,4 +133,11 @@ def apply_mask_func_each_channel(func, img : np.array, maskh : int, maskv : int,
           x, 2, 3]]
     Nesse caso, na função func(J), J.shape = (2, 2), e não J.shape = (3, 3) como no caso do pixel 201x201.
     '''
-    return np.array([apply_mask_func(func, i, maskh, maskv, ext_zero) for i in img.T]).T
+    return np.array([apply_mask_func(func, i, maskh, maskv, ext_zero, pass_coordinates) for i in img.T]).T
+
+def apply_mask(img : np.array, mask : np.array, auto_round=False) -> np.array:
+    ''' Aplica uma máscara mask sobre a imagem img. Se auto_round=True, então round_image_colors é invocado com a saída.
+    Utiliza o método apply_mask_func_each_channel, porém simplificando a aplicação de máscaras. Consulte examples.py
+    '''
+    r = apply_mask_func_each_channel(lambda x, *args: (mask*x).sum(), img, mask.shape[0], mask.shape[1])
+    return round_image_colors(r) if auto_round else r
