@@ -37,6 +37,11 @@ def border_filter(img : np.array):
     return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, bmask))
 
 
+def negative(img : np.array):
+    for channel in range(3):
+        img[:,:,channel] = 255 - img[:,:,channel]
+    return img
+
 
 def main_interpret(args):
     if len(args) < 2:
@@ -53,6 +58,7 @@ def main_interpret(args):
         'mean_mask': mean_mask,
         'median': median,
         'border_filter': border_filter,
+        'negative': negative,
         }
 
     img = open_image(args[0])
