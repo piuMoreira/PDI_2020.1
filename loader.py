@@ -12,6 +12,7 @@ def save_image(img : np.array, path : str):
     return Image.fromarray(img).save(path)
 
 def show_image(img : np.array):
-    ''' Método preguiçoso e sem garantias para visualizar uma imagem.
+    ''' Método para visualizar uma imagem a partir do terminal.
+	Obs. até então, só funciona no linux.
     '''
     Image.fromarray(img).show()
