@@ -26,7 +26,7 @@ erase_blue  = lambda img: erase_channel(img, 2)
 
 def mean_mask(img : np.array):
     mmask = lambda f, g: np.array([[1/f/g]*f]*g)
-    return imgutil.apply_mask(img, mmask(9, 9), auto_round=True)
+    return correlacao_m_por_n(img, mmask(9, 9))
 
 def median(img : np.array):
     return median_filter(img, 3, 3)
@@ -41,8 +41,19 @@ def negative(img : np.array):
     return img
 
 def correlacao_m_por_n(img: np.array, mask: np.array):
-	
-	return img
+    return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask))
+
+def sobel_grad(img: np.array):
+    return imgutil.round_image_colors((sobel_h(img) + sobel_v(img))/2)
+
+def sobel_v(img: np.array):
+    return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask_default_sobel()))
+
+def sobel_h(img: np.array):
+    return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask_default_sobel().T))
+
+def mask_default_sobel():
+    return np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
 
 def main_interpret(args):
     if len(args) < 2:
@@ -60,6 +71,7 @@ def main_interpret(args):
         'median': median,
         'border_filter': border_filter,
         'negative': negative,
+        'sobel': sobel_grad
         }
 
     img = open_image(args[0])
