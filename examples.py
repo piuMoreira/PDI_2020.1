@@ -1,6 +1,7 @@
 from loader import *
 import util as imgutil
 from median import median_filter
+from pymlfunc import normxcorr2
 
 from sys import argv
 
@@ -55,6 +56,12 @@ def sobel_h(img: np.array):
 def mask_default_sobel():
     return np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
 
+def cross_relation_template(fullimg : np.array, templateimg : np.array) -> np.array:
+    n = normxcorr2(templateimg[:,:,0].astype(np.float), fullimg[:,:,0].astype(np.float))
+    pm, ts = np.unravel_index(n.argmax(), n.shape), templateimg.shape
+    return draw_rectangle(fullimg, (pm[1] - ts[1], pm[0] - ts[0], pm[1], pm[0]), outline=(255, 0, 127), width=3)
+    # return imgutil.round_image_colors(n**2*255)
+
 def main_interpret(args):
     if len(args) < 2:
         print('Uso: python3 examples.py IMAGEM operacao1 [operacao2] [operacao3...]')
@@ -71,7 +78,8 @@ def main_interpret(args):
         'median': median,
         'border_filter': border_filter,
         'negative': negative,
-        'sobel': sobel_grad
+        'sobel': sobel_grad,
+        'cross_relation_template': lambda i: cross_relation_template(i, open_image('images/babooneye.png'))
         }
 
     img = open_image(args[0])

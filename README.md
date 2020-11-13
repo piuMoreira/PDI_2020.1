@@ -5,6 +5,7 @@ Repositório para a disciplina de Introdução ao Processamento Digital de Image
 - [Python3](https://www.python.org/)
 - [Numpy](https://numpy.org/)
 - [Pillow](https://pypi.org/project/Pillow/)
+- [pymlfunc](https://pypi.org/project/pymlfunc/)
 
 Opcionalmente, pode-se utilizar o gerenciador de pacotes *pip* para instalar automaticamente as dependências:
 
