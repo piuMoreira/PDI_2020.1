@@ -57,9 +57,10 @@ def mask_default_sobel():
     return np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
 
 def cross_relation_template(fullimg : np.array, templateimg : np.array) -> np.array:
-    n = normxcorr2(templateimg[:,:,0].astype(np.float), fullimg[:,:,0].astype(np.float))
-    pm, ts = np.unravel_index(n.argmax(), n.shape), templateimg.shape
-    return draw_rectangle(fullimg, (pm[1] - ts[1], pm[0] - ts[0], pm[1], pm[0]), outline=(255, 0, 127), width=3)
+    imgzip = zip(fullimg.T.astype(np.float), templateimg.T.astype(np.float)) # Separa as bandas das duas imagens por transposição
+    n = np.array([normxcorr2(t, i) for i,t in imgzip]).mean(0).T # Para cada banda, aplica normxcorr2, depois transpõe novamente
+    pm, ts = np.unravel_index(n.argmax(), n.shape), templateimg.shape # obtém as coordenadas do ponto de máximo de n
+    return draw_rectangle(fullimg, (pm[1] - ts[1], pm[0] - ts[0], pm[1], pm[0]), outline=(255, 0, 127), width=3) # desenha o retângulo
     # return imgutil.round_image_colors(n**2*255)
 
 def main_interpret(args):
