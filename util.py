@@ -44,9 +44,13 @@ def round_image_colors(img : np.array, doAssert=True):
 
 def fix_scale_image_colors(img : np.array, auto_round=True, forceUpperbound=False, forceLowerbond=False):
     ''' Escala todas as cores em caso de valores excedentes na imagem.
+    Se houver valores negativos em img ou forceLowerbond=True, então subtrai-se o módulo do menor valor de img tal que
+        o novo menor valor da imagem resultado é zero (todos os outros valores de img também serão atingidos pela soma)
+    Se houver valores acima de 255 ou forceUpperbound=True, então img é dividido tal que o maior valor passará a ser 255.
+    Se auto_round=True, então a função round_image_colors é chamada ao fim do processo.
     '''
     if img.min() < -0.0 or img.min() < 0.0 or forceLowerbond:
-        img = img+img.min()
+        img = img-img.min()
     if img.max() > 255 or forceUpperbound:
         img = img/img.max()
     return round_image_colors(img) if auto_round else img
