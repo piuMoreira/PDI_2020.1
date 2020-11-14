@@ -96,23 +96,24 @@ def apply_mask_func(func, img : np.array, maskh : int, maskv : int, ext_zero=Tru
     
     w, h = img.shape[0], img.shape[1] # salvamos a largura e altura
     imgz = img if not ext_zero else extend_with_zeros_mask(img, maskv, maskh) # extensão por zeros
-    cc = lambda x: x//2 - 1 if x % 2 == 0 else x//2 # SEM extensão por zero, corte das janelas
+
+    # se não há extensão por zero, então é feito alguns cálculos:
+    cc = lambda x: x//2 - 1 if x % 2 == 0 else x//2 # para máscaras de tamanho irregular/par
     nhl, nvu, nhr, nvd = cc(maskh), cc(maskv), maskh//2 + 1, maskv//2 + 1 # pré-calculando cortes
     
-    def sel_wextz(i, j): # Para extensão por zero
-        args = [i, j] if pass_coordinates else []
-        assert i+maskh <= imgz.shape[0]
-        assert j+maskv <= imgz.shape[1]
-        return func(imgz[i:i+maskh, j:j+maskv], *args) # Aplica func em i,j + MASK
-    
-    def sel_nextz(i, j): # Para SEM extensão por zero
-        args = [i, j] if pass_coordinates else []
-        return func(imgz[max(0, i-nhl):min(w, i+nhr), max(0, j-nvu):min(h, j+nvd)], *args) # Aplica func com limites
+    rc = np.zeros(img.shape) # cria uma imagem com as mesmas dimensões de img
+    for i in range(w): # percorre largura e altura (essa função não percorre bandas individuais)
+        for j in range(h):
+            args = [i, j] if pass_coordinates else [] # opcional, passa i e j para func
+            if ext_zero: # Se há extensão por zero: não precisa cortar a máscara, os zeros garantem
+                assert i+maskh <= imgz.shape[0]    # que não há acesso de indice fora dos limites
+                assert j+maskv <= imgz.shape[1]
+                rc[i,j] = func(imgz[i:i+maskh, j:j+maskv], *args) # Aplica func em i,j c/ ext. zero
+            else: # Se NÃO há extensão por zero: corta a máscara nas bordas
+                rc[i,j] = func(imgz[max(0, i-nhl):min(w, i+nhr), max(0, j-nvu):min(h, j+nvd)], *args)
 
-    if ext_zero: # Se tem extensão por zero...
-        return np.array([[sel_wextz(i, j) for j in range(h)] for i in range(w)])
-    else: # Senão...
-        return np.array([[sel_nextz(i, j) for j in range(h)] for i in range(w)])
+    return rc
+
 
 def apply_mask_func_each_channel(func, img : np.array, maskh : int, maskv : int, ext_zero=True, pass_coordinates=False):
     ''' Aplica uma máscara de tamanho maskh x maskv sobre img usando uma função fornecida func.
