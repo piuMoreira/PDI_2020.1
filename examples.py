@@ -86,6 +86,7 @@ def main_interpret(args):
     for o in args[1:]:
         img = omaps[o](img)
     
+    #save_image(img, '/home/linux/Documentos/PDI_2020.1/1_25.jpg')
     show_image(img)
 
 if __name__ == "__main__":
