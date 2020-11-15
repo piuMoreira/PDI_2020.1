@@ -38,8 +38,9 @@ def complete_negative(img : np.array):
         img[:,:,channel] = 255 - img[:,:,channel]
     return img
 
-def channel_negative(img : np.array, channel : int):
+def channel_negative(img : np.array, channel):
 # Aplica o negativo em um canal específico da imagem, esse  canal é especificado como um parâmetro de entrada
+    channel = int(channel)
     img[:,:,channel] = 255 - img[:,:,channel]
     return img
 
@@ -47,6 +48,7 @@ def correlacao_m_por_n(img: np.array, mask: np.array):
     return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask))
 
 def median_filter(img : np.array, maskh : int, maskv : int, extzero=True):
+    maskh, maskv = int(maskh), int(maskv)
     return imgutil.round_image_colors(imgutil.apply_mask_func_each_channel(np.median, img, maskh, maskv, ext_zero=extzero))
 
 def sobel_grad(img: np.array):
@@ -61,7 +63,10 @@ def sobel_h(img: np.array):
 def mask_default_sobel():
     return np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
 
-def cross_relation_template(fullimg : np.array, templateimg : np.array) -> np.array:
+def cross_relation_template(fullimg : np.array, templateimg='images/babooneye.png') -> np.array:
+    if isinstance(templateimg, str):
+        templateimg = open_image(templateimg)
+    
     imgzip = zip(fullimg.T.astype(np.float), templateimg.T.astype(np.float)) # Separa as bandas das duas imagens por transposição
     n = np.array([normxcorr2(t, i) for i,t in imgzip]).mean(0).T # Para cada banda, aplica normxcorr2, depois transpõe novamente
     pm, ts = np.unravel_index(n.argmax(), n.shape), templateimg.shape # obtém as coordenadas do ponto de máximo de n
@@ -81,15 +86,33 @@ def main_interpret(args):
         'correlacao_m_por_n': correlacao_m_por_n,
         'median_filter': median_filter,
         'sobel': sobel_grad,
-        'cross_relation_template': lambda i: cross_relation_template(i, open_image('images/babooneye.png'))
+        'cross_relation_template': cross_relation_template
         }
 
     img = open_image(args[0])
+    operations = []
+
+    tmpstack = None
+    ko, ke = '{', '}'
     for o in args[1:]:
-        img = omaps[o](img)
-    
-    save_image(img,'babooneyeneg.png')
-    # show_image(img)
+        if not (tmpstack is None):
+            if o.strip()[-1] == ke:
+                operations.append([i.strip() for i in (tmpstack + [o[:-1]]) if i.strip()])
+                tmpstack = None
+            else:
+                tmpstack.append(o)
+        elif ko in o:
+            if o.strip()[-1] == ke:
+                operations.append([i.strip() for i in (o[:o.rfind(ko)], o[o.rfind(ko)+1:-1]) if i.strip()])
+            else:
+                tmpstack = [o[:o.rfind(ko)], o[o.rfind(ko)+1:]]
+        else:
+            operations.append([o.strip()])
+
+    for o in operations:
+        img = omaps[o[0]](img, *o[1:])
+
+    show_image(img)
 
 if __name__ == "__main__":
     main_interpret(argv[1:])
