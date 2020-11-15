@@ -15,7 +15,7 @@ def extend_with_zeros(img : np.array, horiz : int, vert : int, horizr=None, vert
     return np.pad(img, ((vert, vertb), (horiz, horizr)))
 
 
-def extend_with_zeros_mask(img : np.array, horiz : int, vert : int, noncenter=True, rrr={}):
+def extend_with_zeros_mask(img : np.array, horiz, vert=None, noncenter=True, rrr={}):
     ''' Extende uma imagem com zeros nas bordas que possibilite a aplicação de uma máscara horiz x vert.
     noncenter extenderá a janela direita e/ou inferior em +1 caso a máscara seja par
     Exemplo: extend_with_zeros_mask(np.array([[1, 2], [3, 4]]), 3, 3)
@@ -28,6 +28,8 @@ def extend_with_zeros_mask(img : np.array, horiz : int, vert : int, noncenter=Tr
                         [3, 4, 0],
                         [0, 0, 0]])
     '''
+    if vert is None:
+        horiz, vert = horiz
     cc = lambda x: x//2 - 1 if noncenter and x % 2 == 0 else x//2
     rrr['xi'], rrr['yi'] = cc(horiz), cc(vert)
     return extend_with_zeros(img, cc(horiz), cc(vert), horiz//2, vert//2)
@@ -138,6 +140,8 @@ def apply_mask_func_each_channel(func, img : np.array, maskh : int, maskv : int,
           x, 2, 3]]
     Nesse caso, na função func(J), J.shape = (2, 2), e não J.shape = (3, 3) como no caso do pixel 201x201.
     '''
+    if len(img.shape) == 2:
+        return apply_mask_func(func, img, maskh, maskv, ext_zero, pass_coordinates)
     return np.array([apply_mask_func(func, i, maskh, maskv, ext_zero, pass_coordinates) for i in img.T]).T
 
 def apply_mask(img : np.array, mask : np.array, auto_round=False) -> np.array:
