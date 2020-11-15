@@ -90,26 +90,27 @@ def main_interpret(args):
         }
 
     img = open_image(args[0])
-    operations = []
+    operations = [] # Esteira de operações sobre a imagem
 
-    tmpstack = None
+    tmpstack = None # Pilha de argumentos da operação
     ko, ke = '{', '}'
-    for o in args[1:]:
-        if not (tmpstack is None):
-            if o.strip()[-1] == ke:
+    for o in args[1:]: # Para cada argumento da linha de comando (o SO/Python separa por espaços)
+        if not (tmpstack is None): # Se estamos preenchendo a pilha de argumentos
+            if o.strip()[-1] == ke: # Último argumento da pilha, então adiciona a pilha a esteira
                 operations.append([i.strip() for i in (tmpstack + [o[:-1]]) if i.strip()])
-                tmpstack = None
-            else:
+                tmpstack = None # Esvazia a pilha
+            else: # Se haverá mais argumentos na função, então apenas empilha e deixa o for continuar
                 tmpstack.append(o)
-        elif ko in o:
-            if o.strip()[-1] == ke:
+        # Se não estamos preenchendo a pilha, então esperamos o nome da função
+        elif ko in o: # Se o nome da função vem acompanhado do "{", então esperamos os argumentos dela
+            if o.strip()[-1] == ke: # Se temos "}" aqui, é porque tem apenas 1 argumento.
                 operations.append([i.strip() for i in (o[:o.rfind(ko)], o[o.rfind(ko)+1:-1]) if i.strip()])
-            else:
+            else: # Do contrário, cria a pilha de argumentos com o primeiro argumento passado
                 tmpstack = [o[:o.rfind(ko)], o[o.rfind(ko)+1:]]
-        else:
+        else:# Se o nome da função não vem acompanhado de "{", então não tem argumentos
             operations.append([o.strip()])
 
-    for o in operations:
+    for o in operations: # Para cada operação, aplica-a em img e retorna em img
         img = omaps[o[0]](img, *o[1:])
 
     show_image(img)
