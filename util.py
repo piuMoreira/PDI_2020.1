@@ -141,8 +141,10 @@ def apply_mask_func_each_channel(func, img : np.array, maskh : int, maskv : int,
     return np.array([apply_mask_func(func, i, maskh, maskv, ext_zero, pass_coordinates) for i in img.T]).T
 
 def apply_mask(img : np.array, mask : np.array, auto_round=False) -> np.array:
-    ''' Aplica uma máscara mask sobre a imagem img. Se auto_round=True, então round_image_colors é invocado com a saída.
-    Utiliza o método apply_mask_func_each_channel, porém simplificando a aplicação de máscaras. Consulte examples.py
+    ''' Aplica uma máscara mask sobre a imagem img. Se auto_round=True, 
+    então round_image_colors é invocado com a saída.
+    Utiliza o método apply_mask_func_each_channel, porém simplificando 
+    a aplicação de máscaras. Consulte examples.py
     '''
     r = apply_mask_func_each_channel(lambda x, *args: (mask*x).sum(), img, mask.shape[0], mask.shape[1])
     return round_image_colors(r) if auto_round else r

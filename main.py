@@ -46,6 +46,9 @@ def channel_negative(img : np.array, channel : int):
 def correlacao_m_por_n(img: np.array, mask: np.array):
     return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask))
 
+def median_filter(img : np.array, maskh : int, maskv : int, extzero=True):
+    return imgutil.round_image_colors(imgutil.apply_mask_func_each_channel(np.median, img, maskh, maskv, ext_zero=extzero))
+
 def sobel_grad(img: np.array):
     return imgutil.round_image_colors((sobel_h(img) + sobel_v(img))/2)
 
@@ -76,6 +79,7 @@ def main_interpret(args):
         'complete_negative': complete_negative,
         'channel_negative': channel_negative,
         'correlacao_m_por_n': correlacao_m_por_n,
+        'median_filter': median_filter,
         'sobel': sobel_grad,
         'cross_relation_template': lambda i: cross_relation_template(i, open_image('images/babooneye.png'))
         }
@@ -84,7 +88,8 @@ def main_interpret(args):
     for o in args[1:]:
         img = omaps[o](img)
     
-    show_image(img)
+    save_image(img,'babooneyeneg.png')
+    # show_image(img)
 
 if __name__ == "__main__":
     main_interpret(argv[1:])
