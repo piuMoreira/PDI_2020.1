@@ -47,23 +47,25 @@ def channel_negative(img : np.array, channel):
 def correlacao_m_por_n(img: np.array, mask: np.array):
     return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask))
 
-def median_filter(img : np.array, maskh=3, maskv=3, extzero=True):
-    maskh, maskv = int(maskh), int(maskv)
-    return imgutil.round_image_colors(imgutil.apply_mask_func_each_channel(np.median, img, maskh, maskv, ext_zero=extzero))
-
-def sobel_grad(img: np.array):
-    return imgutil.round_image_colors((sobel_h(img) + sobel_v(img))/2)
-
-def sobel_v(img: np.array):
-    return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask_default_sobel()))
-
 def mean_filter(img : np.array, m=9, n=9):
     m, n = int(m), int(n)
     mmask = lambda f, g: np.array([[1/f/g]*f]*g)
     return correlacao_m_por_n(img, mmask(m, n))
 
-def sobel_h(img: np.array):
-    return imgutil.fix_truncate_image_colors(imgutil.apply_mask(img, mask_default_sobel().T))
+def median_filter(img : np.array, maskh=3, maskv=3, extzero=True):
+    maskh, maskv = int(maskh), int(maskv)
+    return imgutil.round_image_colors(imgutil.apply_mask_func_each_channel(np.median, img, maskh, maskv, ext_zero=extzero))
+
+def sobel_grad(img: np.array, mode='normal'):
+    return imgutil.round_image_colors((sobel_h(img, mode) + sobel_v(img, mode))/2)
+
+def sobel_v(img: np.array, mode='normal'):
+    a = imgutil.apply_mask(img, mask_default_sobel())
+    return imgutil.fix_truncate_image_colors(np.abs(a) if mode.lower() == 'abs' else a)
+
+def sobel_h(img: np.array, mode='normal'):
+    a = imgutil.apply_mask(img, mask_default_sobel().T)
+    return imgutil.fix_truncate_image_colors(np.abs(a) if mode.lower() == 'abs' else a)
 
 def mask_default_sobel():
     return np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
@@ -91,6 +93,8 @@ def main_interpret(args):
         'median_filter': median_filter,
         'mean_filter': mean_filter,
         'sobel': sobel_grad,
+        'sobel_v': sobel_v,
+        'sobel_h': sobel_h,
         'cross_relation_template': cross_relation_template
         }
 
